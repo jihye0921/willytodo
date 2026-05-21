@@ -1,0 +1,1822 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>서안이의 오늘 할 일</title>
+
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#e91e63">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="서안이 할 일">
+<meta name="mobile-web-app-capable" content="yes">
+
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+<link rel="icon" type="image/png" sizes="512x512" href="icon-512.png">
+
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  body {
+    font-family: 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif;
+    background: linear-gradient(135deg, #fef3f8 0%, #e0f2fe 100%);
+    min-height: 100vh;
+    padding: 20px;
+    padding-top: max(20px, env(safe-area-inset-top));
+    padding-bottom: max(20px, env(safe-area-inset-bottom));
+    color: #333;
+    -webkit-user-select: none;
+    user-select: none;
+  }
+  .editable, input, textarea {
+    -webkit-user-select: text;
+    user-select: text;
+  }
+  .container {
+    max-width: 1100px;
+    margin: 0 auto;
+    background: white;
+    border-radius: 20px;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.08);
+    padding: 24px;
+  }
+  .header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-bottom: 20px;
+    padding-bottom: 16px;
+    border-bottom: 2px dashed #ffb6c1;
+  }
+  .title {
+    font-size: 1.6rem;
+    font-weight: 700;
+    color: #e91e63;
+    margin-bottom: 8px;
+  }
+  .date-nav {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+  .date-display {
+    font-size: 1rem;
+    color: #666;
+    font-weight: 600;
+    cursor: pointer;
+    padding: 6px 12px;
+    border-radius: 8px;
+    background: #f5f5f5;
+    border: 2px dashed transparent;
+    transition: all 0.2s;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .date-display:hover {
+    background: #fce4ec;
+    border-color: #ec407a;
+    color: #c2185b;
+  }
+  .date-display.editing {
+    background: white;
+    border-color: #ec407a;
+  }
+  .date-nav-btn {
+    background: #f3e5f5;
+    border: none;
+    color: #6a1b9a;
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 700;
+    font-size: 1rem;
+    transition: all 0.2s;
+  }
+  .date-nav-btn:hover {
+    background: #6a1b9a;
+    color: white;
+  }
+  .today-btn {
+    background: linear-gradient(135deg, #ffd54f, #ff9800);
+    color: white;
+    border: none;
+    padding: 6px 14px;
+    border-radius: 8px;
+    font-weight: 700;
+    font-size: 0.85rem;
+    cursor: pointer;
+    box-shadow: 0 2px 6px rgba(255,152,0,0.3);
+  }
+  .date-input-hidden {
+    position: absolute;
+    opacity: 0;
+    pointer-events: none;
+    width: 0;
+    height: 0;
+  }
+  .viewing-other-day {
+    background: linear-gradient(135deg, #fff3e0, #ffe0b2);
+    border-left: 4px solid #ff9800;
+    padding: 10px 14px;
+    border-radius: 8px;
+    margin-top: 10px;
+    margin-bottom: 10px;
+    font-size: 0.9rem;
+    color: #e65100;
+    font-weight: 600;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 10px;
+  }
+  .score-board {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+  .score-box {
+    background: linear-gradient(135deg, #ffd54f, #ff9800);
+    color: white;
+    padding: 8px 16px;
+    border-radius: 12px;
+    font-weight: 700;
+    font-size: 0.95rem;
+    box-shadow: 0 4px 12px rgba(255,152,0,0.3);
+  }
+  .total-score {
+    background: linear-gradient(135deg, #ec407a, #d81b60);
+    box-shadow: 0 4px 12px rgba(216,27,96,0.3);
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+  .goal-input {
+    background: rgba(255,255,255,0.25);
+    border: none;
+    color: white;
+    width: 60px;
+    text-align: center;
+    font-weight: 700;
+    font-size: 0.95rem;
+    border-radius: 6px;
+    padding: 2px 4px;
+    font-family: inherit;
+  }
+  .goal-input:focus {
+    outline: none;
+    background: rgba(255,255,255,0.4);
+  }
+  table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    margin-top: 10px;
+    background: white;
+    border-radius: 12px;
+    overflow: hidden;
+  }
+  th {
+    background: linear-gradient(135deg, #b39ddb, #9575cd);
+    color: white;
+    padding: 12px 8px;
+    font-size: 0.95rem;
+    text-align: center;
+  }
+  td {
+    padding: 10px 8px;
+    border-bottom: 1px solid #f0f0f0;
+    vertical-align: middle;
+    text-align: center;
+  }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: #fafafa; }
+  tr.removing { animation: fadeOutRow 0.3s ease forwards; }
+  @keyframes fadeOutRow {
+    0% { opacity: 1; transform: translateX(0); }
+    100% { opacity: 0; transform: translateX(-30px); }
+  }
+
+  .subject-cell {
+    font-weight: 700;
+    color: #5e35b1;
+    background: #f3e5f5;
+    width: 90px;
+  }
+  .editable {
+    border: 1px dashed transparent;
+    border-radius: 6px;
+    padding: 6px 10px;
+    min-width: 50px;
+    min-height: 24px;
+    cursor: text;
+    transition: all 0.2s;
+  }
+  .editable:hover {
+    border-color: #ce93d8;
+    background: #fafafa;
+  }
+  .editable:focus {
+    outline: none;
+    border-color: #9575cd;
+    background: white;
+    box-shadow: 0 0 0 3px rgba(149,117,205,0.15);
+  }
+  .editable:empty::before {
+    content: attr(data-placeholder);
+    color: #bbb;
+    font-style: italic;
+    pointer-events: none;
+  }
+  .editable:focus:empty::before { content: ''; }
+  .task-cell { text-align: left; min-width: 260px; }
+  .task-cell .editable { font-size: 1rem; padding: 8px 12px; }
+
+  .checkbox-wrap {
+    display: inline-block;
+    width: 30px;
+    height: 30px;
+    cursor: pointer;
+    position: relative;
+  }
+  .checkbox-wrap input {
+    opacity: 0;
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    cursor: pointer;
+    z-index: 2;
+  }
+  .checkbox-visual {
+    width: 30px;
+    height: 30px;
+    border: 2.5px solid #b0bec5;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: white;
+    transition: all 0.2s;
+    font-size: 1.2rem;
+    color: white;
+  }
+  .checkbox-wrap input:checked + .checkbox-visual {
+    background: linear-gradient(135deg, #66bb6a, #43a047);
+    border-color: #43a047;
+    transform: scale(1.1);
+  }
+  .checkbox-wrap input:checked + .checkbox-visual::after {
+    content: '✓';
+    font-weight: 900;
+  }
+
+  .hearts-cell { white-space: nowrap; min-width: 110px; }
+  .heart {
+    display: inline-block;
+    width: 28px;
+    height: 28px;
+    cursor: pointer;
+    margin: 0 2px;
+    transition: transform 0.2s;
+  }
+  .heart:hover { transform: scale(1.2); }
+  .heart svg { width: 100%; height: 100%; }
+  .heart .heart-fill {
+    fill: #fff;
+    stroke: #e91e63;
+    stroke-width: 2;
+    transition: fill 0.3s;
+  }
+  .heart.filled .heart-fill {
+    fill: #e91e63;
+    animation: heartPop 0.4s ease;
+  }
+  @keyframes heartPop {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.4); }
+    100% { transform: scale(1); }
+  }
+
+  .row-score {
+    font-weight: 700;
+    color: #e91e63;
+    font-size: 1.1rem;
+    width: 60px;
+  }
+
+  .delete-cell { width: 36px; }
+  .delete-btn {
+    background: #f5f5f5;
+    border: 1px solid #bdbdbd;
+    color: #757575;
+    cursor: pointer;
+    font-size: 0.85rem;
+    font-weight: 700;
+    padding: 2px 7px;
+    border-radius: 6px;
+    transition: all 0.2s;
+    line-height: 1;
+  }
+  .delete-btn:hover {
+    background: #e0e0e0;
+    color: #424242;
+    border-color: #9e9e9e;
+  }
+
+  .controls {
+    display: flex;
+    gap: 10px;
+    margin-top: 16px;
+    flex-wrap: wrap;
+  }
+  .btn {
+    background: linear-gradient(135deg, #42a5f5, #1e88e5);
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 10px;
+    font-size: 0.95rem;
+    font-weight: 600;
+    cursor: pointer;
+    box-shadow: 0 4px 12px rgba(30,136,229,0.25);
+    transition: transform 0.15s;
+  }
+  .btn:hover { transform: translateY(-2px); }
+  .btn.danger {
+    background: linear-gradient(135deg, #ef5350, #e53935);
+    box-shadow: 0 4px 12px rgba(229,57,53,0.25);
+  }
+  .btn.purple {
+    background: linear-gradient(135deg, #ab47bc, #8e24aa);
+    box-shadow: 0 4px 12px rgba(142,36,170,0.25);
+  }
+  .btn.backup {
+    background: linear-gradient(135deg, #26c6da, #00acc1);
+    box-shadow: 0 4px 12px rgba(0,172,193,0.25);
+  }
+  .btn.restore {
+    background: linear-gradient(135deg, #ffa726, #fb8c00);
+    box-shadow: 0 4px 12px rgba(251,140,0,0.25);
+  }
+
+  .legend {
+    margin-top: 16px;
+    padding: 16px 18px;
+    background: #fff8e1;
+    border-radius: 12px;
+    font-size: 0.9rem;
+    color: #5d4037;
+  }
+  .legend-title {
+    font-weight: 700;
+    margin-bottom: 10px;
+    color: #d84315;
+    font-size: 0.95rem;
+  }
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin: 8px 0;
+    flex-wrap: wrap;
+  }
+  .legend-hearts {
+    color: #e91e63;
+    font-size: 1.1rem;
+    min-width: 60px;
+    flex-shrink: 0;
+  }
+  .legend-text { flex: 1; min-width: 200px; }
+  .legend-text .editable { display: inline-block; width: 100%; }
+  .legend-score {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    color: #d84315;
+    font-weight: 700;
+    flex-shrink: 0;
+  }
+  .score-input {
+    width: 44px;
+    text-align: center;
+    border: 1px dashed #ce93d8;
+    background: white;
+    border-radius: 6px;
+    padding: 4px 6px;
+    font-weight: 700;
+    font-size: 0.95rem;
+    color: #d84315;
+    font-family: inherit;
+  }
+  .score-input:focus {
+    outline: none;
+    border-color: #9575cd;
+    border-style: solid;
+    box-shadow: 0 0 0 3px rgba(149,117,205,0.15);
+  }
+
+  .chart-section {
+    margin-top: 24px;
+    padding: 20px;
+    background: linear-gradient(135deg, #f3e5f5 0%, #e8f5e9 100%);
+    border-radius: 16px;
+  }
+  .chart-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+  .chart-title {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: #6a1b9a;
+  }
+  .chart-tabs {
+    display: flex;
+    gap: 6px;
+    background: white;
+    border-radius: 10px;
+    padding: 4px;
+  }
+  .chart-tab {
+    padding: 6px 16px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 0.9rem;
+    color: #888;
+    border: none;
+    background: transparent;
+    transition: all 0.2s;
+  }
+  .chart-tab.active {
+    background: linear-gradient(135deg, #ab47bc, #8e24aa);
+    color: white;
+  }
+  .chart-nav {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 12px;
+    background: white;
+    border-radius: 10px;
+    padding: 8px 12px;
+  }
+  .chart-nav-btn {
+    background: #f3e5f5;
+    border: none;
+    color: #6a1b9a;
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 700;
+    font-size: 1rem;
+    transition: all 0.2s;
+  }
+  .chart-nav-btn:hover:not(:disabled) {
+    background: #6a1b9a;
+    color: white;
+  }
+  .chart-nav-btn:disabled {
+    opacity: 0.3;
+    cursor: not-allowed;
+  }
+  .chart-nav-label {
+    font-weight: 700;
+    color: #6a1b9a;
+    font-size: 0.95rem;
+  }
+  .chart-container {
+    background: white;
+    border-radius: 12px;
+    padding: 16px;
+    min-height: 220px;
+  }
+  .chart-bars {
+    display: flex;
+    align-items: flex-end;
+    gap: 6px;
+    height: 180px;
+    padding: 10px 0;
+    border-bottom: 2px solid #e0e0e0;
+  }
+  .chart-bar-wrap {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    min-width: 24px;
+    cursor: pointer;
+    transition: transform 0.15s;
+  }
+  .chart-bar-wrap:hover { transform: translateY(-2px); }
+  .chart-bar-wrap:active { transform: scale(0.95); }
+  .chart-bar {
+    width: 100%;
+    background: linear-gradient(180deg, #ec407a, #d81b60);
+    border-radius: 6px 6px 0 0;
+    min-height: 2px;
+    transition: all 0.5s ease;
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    padding-top: 4px;
+  }
+  .chart-bar.today {
+    background: linear-gradient(180deg, #ffd54f, #ff9800);
+    box-shadow: 0 0 10px rgba(255,152,0,0.5);
+  }
+  .chart-bar-value {
+    color: white;
+    font-size: 0.7rem;
+    font-weight: 700;
+    text-shadow: 0 1px 2px rgba(0,0,0,0.2);
+  }
+  .chart-bar.zero { background: #e0e0e0; min-height: 4px; }
+  .chart-bar.zero .chart-bar-value { color: #999; }
+  .chart-bar-label {
+    font-size: 0.75rem;
+    color: #666;
+    font-weight: 600;
+    white-space: nowrap;
+    text-align: center;
+  }
+  .chart-bar-label.today-label {
+    color: #ff6f00;
+    font-weight: 800;
+  }
+  .chart-summary {
+    display: flex;
+    justify-content: space-around;
+    margin-top: 12px;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+  .summary-item { text-align: center; }
+  .summary-label {
+    font-size: 0.8rem;
+    color: #666;
+    margin-bottom: 4px;
+  }
+  .summary-value {
+    font-size: 1.3rem;
+    font-weight: 700;
+    color: #6a1b9a;
+  }
+
+  .popup-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.6);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 100;
+    animation: fadeIn 0.3s;
+    padding: 20px;
+  }
+  .popup-overlay.show { display: flex; }
+  @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+  .popup {
+    background: white;
+    padding: 36px 32px;
+    border-radius: 24px;
+    text-align: center;
+    max-width: 420px;
+    width: 100%;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+    animation: popIn 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+    max-height: 90vh;
+    overflow-y: auto;
+  }
+  @keyframes popIn {
+    0% { transform: scale(0.5); opacity: 0; }
+    100% { transform: scale(1); opacity: 1; }
+  }
+  .popup-emoji {
+    font-size: 4rem;
+    margin-bottom: 12px;
+    animation: bounce 0.8s ease infinite;
+  }
+  @keyframes bounce {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-10px); }
+  }
+  .popup-message {
+    font-size: 1.15rem;
+    font-weight: 700;
+    color: #e91e63;
+    margin-bottom: 16px;
+    line-height: 1.5;
+  }
+  .popup-coupon {
+    background: linear-gradient(135deg, #fff9c4, #fff59d);
+    border: 3px dashed #f9a825;
+    border-radius: 16px;
+    padding: 16px;
+    margin-bottom: 20px;
+  }
+  .popup-coupon-label {
+    font-size: 0.8rem;
+    color: #f57f17;
+    font-weight: 700;
+    margin-bottom: 6px;
+  }
+  .popup-coupon-content {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: #e65100;
+    line-height: 1.4;
+  }
+  .popup-close {
+    background: linear-gradient(135deg, #ec407a, #d81b60);
+    color: white;
+    border: none;
+    padding: 10px 30px;
+    border-radius: 20px;
+    font-size: 1rem;
+    font-weight: 700;
+    cursor: pointer;
+    box-shadow: 0 4px 12px rgba(216,27,96,0.4);
+  }
+
+  .coupon-list {
+    text-align: left;
+    margin: 16px 0;
+    max-height: 50vh;
+    overflow-y: auto;
+  }
+  .coupon-item {
+    background: linear-gradient(135deg, #fff9c4, #fff59d);
+    border: 2px dashed #f9a825;
+    border-radius: 12px;
+    padding: 12px 14px;
+    margin-bottom: 10px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 10px;
+  }
+  .coupon-item-content {
+    flex: 1;
+    font-weight: 700;
+    color: #e65100;
+    font-size: 0.95rem;
+  }
+  .coupon-item-meta {
+    font-size: 0.75rem;
+    color: #999;
+    margin-top: 2px;
+    font-weight: 500;
+  }
+  .coupon-empty {
+    text-align: center;
+    padding: 30px 20px;
+    color: #999;
+    font-size: 0.95rem;
+    line-height: 1.6;
+  }
+
+  .confetti {
+    position: fixed;
+    width: 10px;
+    height: 10px;
+    pointer-events: none;
+    z-index: 101;
+  }
+
+  @media (max-width: 768px) {
+    body { padding: 12px; }
+    .container { padding: 14px; }
+    .title { font-size: 1.3rem; }
+    th, td { padding: 8px 4px; font-size: 0.85rem; }
+    .subject-cell { width: 70px; }
+    .task-cell { min-width: 160px; }
+    .heart { width: 22px; height: 22px; }
+    .checkbox-visual { width: 26px; height: 26px; }
+    .legend { font-size: 0.8rem; }
+    .chart-bar-label { font-size: 0.65rem; }
+    .delete-btn { font-size: 0.75rem; padding: 2px 5px; }
+  }
+
+  @media (display-mode: standalone) {
+    body { padding-top: max(20px, env(safe-area-inset-top)); }
+  }
+</style>
+</head>
+<body>
+
+<div class="container">
+  <div class="header">
+    <div>
+      <div class="title">📚 서안이의 오늘 할 일</div>
+      <div class="date-nav">
+        <button class="date-nav-btn" onclick="changeDate(-1)" title="이전 날">◀</button>
+        <div class="date-display" id="dateDisplay" onclick="openDatePicker()">
+          <span>📅</span>
+          <span id="dateText"></span>
+        </div>
+        <button class="date-nav-btn" onclick="changeDate(1)" title="다음 날">▶</button>
+        <button class="today-btn" id="todayBtn" onclick="goToToday()" style="display:none;">오늘로</button>
+        <input type="date" id="datePicker" class="date-input-hidden" onchange="onDatePicked(this.value)">
+      </div>
+    </div>
+    <div class="score-board">
+      <div class="score-box" id="dayScoreBox">오늘 <span id="todayScore">0</span>점</div>
+      <div class="score-box total-score">
+        누적 <span id="totalScore">0</span> / 
+        <input type="number" class="goal-input" id="goalInput" min="1" value="1000" onchange="updateGoal(this.value)">점
+      </div>
+    </div>
+  </div>
+
+  <div class="viewing-other-day" id="viewingNotice" style="display:none;">
+    <span id="viewingNoticeText"></span>
+    <button class="today-btn" onclick="goToToday()">오늘로 돌아가기</button>
+  </div>
+
+  <div style="overflow-x: auto;">
+    <table id="todoTable">
+      <thead>
+        <tr>
+          <th class="delete-cell"></th>
+          <th style="width:90px;">과목</th>
+          <th>할 일</th>
+          <th style="width:80px;">완료</th>
+          <th style="width:130px;">평가</th>
+          <th style="width:60px;">점수</th>
+        </tr>
+      </thead>
+      <tbody id="todoBody"></tbody>
+    </table>
+  </div>
+
+  <div class="legend">
+    <div class="legend-title">💝 평가 기준 (직접 수정할 수 있어요)</div>
+    <div class="legend-item">
+      <span class="legend-hearts">♥♥♥</span>
+      <span class="legend-text"><span class="editable" contenteditable="true" onblur="updateLegendText(3, this.textContent)" id="legendText3">스스로 해냈어!</span></span>
+      <span class="legend-score">
+        <input type="number" class="score-input" id="score3" value="3" min="0" onchange="updateLegendScore(3, this.value)">점
+      </span>
+    </div>
+    <div class="legend-item">
+      <span class="legend-hearts">♥♥</span>
+      <span class="legend-text"><span class="editable" contenteditable="true" onblur="updateLegendText(2, this.textContent)" id="legendText2">잔소리 조금 듣고 해냈어!</span></span>
+      <span class="legend-score">
+        <input type="number" class="score-input" id="score2" value="2" min="0" onchange="updateLegendScore(2, this.value)">점
+      </span>
+    </div>
+    <div class="legend-item">
+      <span class="legend-hearts">♥</span>
+      <span class="legend-text"><span class="editable" contenteditable="true" onblur="updateLegendText(1, this.textContent)" id="legendText1">오늘은 못했어, 내일은 할 수 있지?</span></span>
+      <span class="legend-score">
+        <input type="number" class="score-input" id="score1" value="1" min="0" onchange="updateLegendScore(1, this.value)">점
+      </span>
+    </div>
+  </div>
+
+  <div class="controls">
+    <button class="btn" onclick="addRow()">+ 할 일 추가</button>
+    <button class="btn purple" onclick="showCouponsPopup()">🎁 받은 쿠폰 보기</button>
+    <button class="btn backup" onclick="exportData()">💾 백업하기</button>
+    <button class="btn restore" onclick="document.getElementById('restoreFile').click()">📥 복원하기</button>
+    <button class="btn danger" onclick="resetToday()">🔄 초기화</button>
+    <input type="file" id="restoreFile" accept=".json" style="display:none" onchange="importData(event)">
+  </div>
+
+  <div class="chart-section">
+    <div class="chart-header">
+      <div class="chart-title">📊 점수 그래프 <span style="font-size:0.8rem; color:#999; font-weight:normal;">(막대 탭하면 그날로 이동)</span></div>
+      <div class="chart-tabs">
+        <button class="chart-tab active" onclick="switchChart('week', this)">주간</button>
+        <button class="chart-tab" onclick="switchChart('month', this)">월간</button>
+      </div>
+    </div>
+    <div class="chart-nav">
+      <button class="chart-nav-btn" id="navPrev" onclick="navChart(-1)">◀</button>
+      <div class="chart-nav-label" id="navLabel">-</div>
+      <button class="chart-nav-btn" id="navNext" onclick="navChart(1)">▶</button>
+    </div>
+    <div class="chart-container">
+      <div class="chart-bars" id="chartBars"></div>
+      <div class="chart-summary" id="chartSummary"></div>
+    </div>
+  </div>
+</div>
+
+<div class="popup-overlay" id="popupOverlay">
+  <div class="popup">
+    <div class="popup-emoji" id="popupEmoji">🎉</div>
+    <div class="popup-message" id="popupMessage"></div>
+    <div class="popup-coupon" id="popupCoupon" style="display:none;">
+      <div class="popup-coupon-label">🎁 깜짝 쿠폰</div>
+      <div class="popup-coupon-content" id="popupCouponContent"></div>
+    </div>
+    <button class="popup-close" onclick="closePopup()">수고했어!</button>
+  </div>
+</div>
+
+<div class="popup-overlay" id="couponListOverlay">
+  <div class="popup">
+    <div style="font-size:2.5rem; margin-bottom:8px;">🎁</div>
+    <div class="popup-message" style="margin-bottom:8px;">받은 쿠폰 목록</div>
+    <div class="coupon-list" id="couponListContent"></div>
+    <button class="popup-close" onclick="closeCouponList()">닫기</button>
+  </div>
+</div>
+
+<script>
+  const cheerMessages1 = [
+    { emoji: '🌱', text: '오늘은 못했지만 괜찮아!<br>내일은 스스로 해낼 수 있어!' },
+    { emoji: '💪', text: '실수도 성장의 한 걸음이야!<br>내일은 더 잘할 수 있어!' },
+    { emoji: '🌅', text: '내일은 새로운 기회야!<br>서안이는 할 수 있는 아이야!' },
+    { emoji: '🌟', text: '오늘의 경험이 내일의 너를 더 단단하게 만들어줄거야!' },
+    { emoji: '🦋', text: '천천히 가도 괜찮아!<br>내일은 분명 스스로 해낼 수 있어!' },
+    { emoji: '🌷', text: '엄마는 서안이를 믿어!<br>내일은 꼭 스스로 해보자!' },
+    { emoji: '☀️', text: '오늘은 못했어도 괜찮아!<br>내일 다시 도전해보자!' }
+  ];
+
+  const cheerMessages2 = [
+    { emoji: '👍', text: '잘했어! 내일은 엄마 잔소리<br>없이도 스스로 할 수 있어!' },
+    { emoji: '🌟', text: '오늘도 결국 해냈구나!<br>내일은 처음부터 혼자 도전!' },
+    { emoji: '🎈', text: '한 걸음 더 가까워졌어!<br>내일은 잔소리 없이 스스로!' },
+    { emoji: '🌈', text: '잘하고 있어!<br>이제 혼자서도 충분히 할 수 있어!' },
+    { emoji: '⭐', text: '대단해! 다음엔 엄마가<br>말하기 전에 먼저 해보자!' },
+    { emoji: '🌻', text: '오늘도 끝까지 해낸 서안이!<br>내일은 스스로의 힘으로!' },
+    { emoji: '🚀', text: '거의 다 왔어!<br>내일은 엄마 도움 없이 도전!' }
+  ];
+
+  const cheerMessages3 = [
+    { emoji: '🎉', text: '와! 정말 잘했어!<br>스스로 해낸 너는 최고야!' },
+    { emoji: '🌟', text: '대단해! 오늘도 한 걸음<br>더 성장했구나!' },
+    { emoji: '👏', text: '짝짝짝! 자기주도 짱!<br>이렇게 계속 멋지게 해보자!' },
+    { emoji: '🏆', text: '챔피언이야!<br>스스로 해내는 너가 자랑스러워!' },
+    { emoji: '💪', text: '오늘도 끝까지 해냈구나!<br>너의 노력이 빛나고 있어!' },
+    { emoji: '🦄', text: '환상적이야!<br>너는 정말 특별한 아이야!' },
+    { emoji: '🌈', text: '무지개처럼 빛나는 하루!<br>스스로 해낸 모습이 멋져!' },
+    { emoji: '⭐', text: '별처럼 반짝반짝!<br>오늘도 너무 잘했어!' },
+    { emoji: '🎊', text: '축하해!<br>스스로 해내는 힘이 자라고 있어!' },
+    { emoji: '🚀', text: '우주로 날아갈 만큼 멋져!<br>이 기세로 계속 가보자!' },
+    { emoji: '🥇', text: '금메달감이야!<br>스스로의 힘으로 1등!' }
+  ];
+
+  const couponList = [
+    '🎮 게임 시간 10분 추가',
+    '🎮 게임 시간 15분 추가',
+    '🤫 6시간 엄마 잔소리 금지',
+    '🍰 좋아하는 디저트 1개',
+    '🏪 편의점 간식 쿠폰 2000원',
+    '📺 유튜브 30분 더 보기',
+    '🛌 평소보다 30분 늦게 자기',
+    '🍕 오늘 저녁 메뉴 서안이가 선택',
+    '🛍️ 다이소에서 3000원 쇼핑',
+    '🎬 가족 영화 보는 날 (서안이 선택)',
+    '📚 새 책 1권 선물',
+    '🏃 주말 가고 싶은 곳 1군데 가기',
+    '💝 엄마와 단둘이 데이트 시간'
+  ];
+
+  const premiumCouponList = [
+    '🎮 게임 시간 30분 추가',
+    '🍦 배스킨라빈스 아이스크림 1개',
+    '🏪 편의점 간식 쿠폰 5000원'
+  ];
+
+  function generateMilestones(maxScore) {
+    const list = [
+      { score: 15, icon: '🌱', couponCount: 1 },
+      { score: 45, icon: '🌟', couponCount: 1 },
+      { score: 90, icon: '🎁', couponCount: 1 }
+    ];
+    let next = 130;
+    const icons = ['🏆', '👑', '💎', '🌈', '🚀', '⭐', '🦄', '🎊'];
+    let iconIdx = 0;
+    while (next <= maxScore + 100) {
+      list.push({
+        score: next,
+        icon: icons[iconIdx % icons.length],
+        couponCount: next >= 250 ? 3 : (next >= 170 ? 2 : 1)
+      });
+      next += 40;
+      iconIdx++;
+    }
+    return list;
+  }
+
+  let milestones = generateMilestones(500);
+
+  let legendConfig = {
+    1: { text: '오늘은 못했어, 내일은 할 수 있지?', score: 1 },
+    2: { text: '잔소리 조금 듣고 해냈어!', score: 2 },
+    3: { text: '스스로 해냈어!', score: 3 }
+  };
+  let goalScore = 1000;
+  let achievedMilestones = [];
+  let receivedCoupons = [];
+  let currentChartType = 'week';
+  let chartOffset = 0;
+
+  let todos = [];
+  let selectedDate = new Date();
+  selectedDate.setHours(0,0,0,0);
+
+  function getTodayKey() {
+    const d = selectedDate;
+    return `todo_${d.getFullYear()}_${String(d.getMonth()+1).padStart(2,'0')}_${String(d.getDate()).padStart(2,'0')}`;
+  }
+
+  function getMonthKey() {
+    const today = new Date();
+    return `${today.getFullYear()}_${String(today.getMonth()+1).padStart(2,'0')}`;
+  }
+
+  function isViewingToday() {
+    const today = new Date();
+    today.setHours(0,0,0,0);
+    return selectedDate.getTime() === today.getTime();
+  }
+
+  function displayDate() {
+    const d = selectedDate;
+    const today = new Date();
+    today.setHours(0,0,0,0);
+    const days = ['일','월','화','수','목','금','토'];
+    const isToday = d.getTime() === today.getTime();
+    const isYesterday = d.getTime() === today.getTime() - 86400000;
+    const isTomorrow = d.getTime() === today.getTime() + 86400000;
+
+    let label = '';
+    if (isToday) label = '오늘';
+    else if (isYesterday) label = '어제';
+    else if (isTomorrow) label = '내일';
+
+    const dateText = `${d.getFullYear()}년 ${d.getMonth()+1}월 ${d.getDate()}일 (${days[d.getDay()]})${label ? ' · ' + label : ''}`;
+    document.getElementById('dateText').textContent = dateText;
+
+    const notice = document.getElementById('viewingNotice');
+    const noticeText = document.getElementById('viewingNoticeText');
+    const todayBtn = document.getElementById('todayBtn');
+    
+    if (!isToday) {
+      notice.style.display = 'flex';
+      if (d.getTime() < today.getTime()) {
+        noticeText.innerHTML = `📌 <strong>지난 날짜</strong>의 기록을 보고 있어요. 수정도 가능해요!`;
+      } else {
+        noticeText.innerHTML = `📌 <strong>미래 날짜</strong>의 할 일을 미리 계획 중이에요!`;
+      }
+      todayBtn.style.display = 'inline-block';
+      document.getElementById('dateDisplay').classList.add('editing');
+    } else {
+      notice.style.display = 'none';
+      todayBtn.style.display = 'none';
+      document.getElementById('dateDisplay').classList.remove('editing');
+    }
+  }
+
+  function changeDate(direction) {
+    selectedDate.setDate(selectedDate.getDate() + direction);
+    selectedDate.setHours(0,0,0,0);
+    loadData();
+    render();
+    displayDate();
+  }
+
+  function goToToday() {
+    selectedDate = new Date();
+    selectedDate.setHours(0,0,0,0);
+    loadData();
+    render();
+    displayDate();
+  }
+
+  function openDatePicker() {
+    const picker = document.getElementById('datePicker');
+    const d = selectedDate;
+    const dateStr = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+    picker.value = dateStr;
+    picker.showPicker ? picker.showPicker() : picker.click();
+  }
+
+  function onDatePicked(value) {
+    if (!value) return;
+    const [year, month, day] = value.split('-').map(Number);
+    selectedDate = new Date(year, month - 1, day);
+    selectedDate.setHours(0,0,0,0);
+    loadData();
+    render();
+    displayDate();
+  }
+
+  function playClapSound() {
+    try {
+      const ctx = new (window.AudioContext || window.webkitAudioContext)();
+      for (let i = 0; i < 3; i++) {
+        setTimeout(() => {
+          const bufferSize = ctx.sampleRate * 0.08;
+          const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+          const data = buffer.getChannelData(0);
+          for (let j = 0; j < bufferSize; j++) {
+            data[j] = (Math.random() * 2 - 1) * Math.exp(-j / (bufferSize * 0.3));
+          }
+          const source = ctx.createBufferSource();
+          source.buffer = buffer;
+          const gain = ctx.createGain();
+          gain.gain.value = 0.3;
+          const filter = ctx.createBiquadFilter();
+          filter.type = 'bandpass';
+          filter.frequency.value = 2500;
+          source.connect(filter);
+          filter.connect(gain);
+          gain.connect(ctx.destination);
+          source.start();
+        }, i * 100);
+      }
+    } catch(e) {}
+  }
+
+  function playHeart1Sound() {
+    try {
+      const ctx = new (window.AudioContext || window.webkitAudioContext)();
+      [392, 523].forEach((freq, idx) => {
+        setTimeout(() => {
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+          osc.frequency.value = freq;
+          osc.type = 'sine';
+          gain.gain.setValueAtTime(0.2, ctx.currentTime);
+          gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.5);
+          osc.connect(gain);
+          gain.connect(ctx.destination);
+          osc.start();
+          osc.stop(ctx.currentTime + 0.5);
+        }, idx * 150);
+      });
+    } catch(e) {}
+  }
+
+  function playHeart2Sound() {
+    try {
+      const ctx = new (window.AudioContext || window.webkitAudioContext)();
+      [523, 659, 784].forEach((freq, idx) => {
+        setTimeout(() => {
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+          osc.frequency.value = freq;
+          osc.type = 'triangle';
+          gain.gain.setValueAtTime(0.22, ctx.currentTime);
+          gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.4);
+          osc.connect(gain);
+          gain.connect(ctx.destination);
+          osc.start();
+          osc.stop(ctx.currentTime + 0.4);
+        }, idx * 120);
+      });
+    } catch(e) {}
+  }
+
+  function playCheerSound() {
+    try {
+      const ctx = new (window.AudioContext || window.webkitAudioContext)();
+      for (let i = 0; i < 8; i++) {
+        setTimeout(() => {
+          const bufferSize = ctx.sampleRate * 0.06;
+          const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+          const data = buffer.getChannelData(0);
+          for (let j = 0; j < bufferSize; j++) {
+            data[j] = (Math.random() * 2 - 1) * Math.exp(-j / (bufferSize * 0.25));
+          }
+          const source = ctx.createBufferSource();
+          source.buffer = buffer;
+          const gain = ctx.createGain();
+          gain.gain.value = 0.35;
+          const filter = ctx.createBiquadFilter();
+          filter.type = 'bandpass';
+          filter.frequency.value = 2000 + Math.random() * 1500;
+          source.connect(filter);
+          filter.connect(gain);
+          gain.connect(ctx.destination);
+          source.start();
+        }, i * 80);
+      }
+      setTimeout(() => {
+        [523, 659, 784, 1047].forEach((freq, idx) => {
+          setTimeout(() => {
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
+            osc.frequency.value = freq;
+            osc.type = 'sine';
+            gain.gain.setValueAtTime(0.2, ctx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.4);
+            osc.connect(gain);
+            gain.connect(ctx.destination);
+            osc.start();
+            osc.stop(ctx.currentTime + 0.4);
+          }, idx * 100);
+        });
+      }, 200);
+    } catch(e) {}
+  }
+
+  function playMilestoneSound() {
+    try {
+      const ctx = new (window.AudioContext || window.webkitAudioContext)();
+      [523, 659, 784, 1047, 1319].forEach((freq, idx) => {
+        setTimeout(() => {
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+          osc.frequency.value = freq;
+          osc.type = 'triangle';
+          gain.gain.setValueAtTime(0.25, ctx.currentTime);
+          gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.5);
+          osc.connect(gain);
+          gain.connect(ctx.destination);
+          osc.start();
+          osc.stop(ctx.currentTime + 0.5);
+        }, idx * 100);
+      });
+    } catch(e) {}
+  }
+
+  function heartSVG() {
+    return `<svg viewBox="0 0 24 24"><path class="heart-fill" d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>`;
+  }
+
+  function render() {
+    const tbody = document.getElementById('todoBody');
+    tbody.innerHTML = '';
+    todos.forEach((todo, idx) => {
+      const tr = document.createElement('tr');
+      const rowScore = getScoreForHearts(todo.hearts);
+      tr.innerHTML = `
+        <td class="delete-cell">
+          <button type="button" class="delete-btn" data-idx="${idx}" title="삭제">✕</button>
+        </td>
+        <td class="subject-cell">
+          <div class="editable" contenteditable="true" data-idx="${idx}" data-field="subject" data-placeholder="과목">${escapeHtml(todo.subject)}</div>
+        </td>
+        <td class="task-cell">
+          <div class="editable" contenteditable="true" data-idx="${idx}" data-field="task" data-placeholder="할 일 입력">${escapeHtml(todo.task)}</div>
+        </td>
+        <td>
+          <label class="checkbox-wrap">
+            <input type="checkbox" data-idx="${idx}" class="todo-check" ${todo.done ? 'checked' : ''}>
+            <span class="checkbox-visual"></span>
+          </label>
+        </td>
+        <td class="hearts-cell">
+          ${[1,2,3].map(n => `<span class="heart ${todo.hearts >= n ? 'filled' : ''}" data-idx="${idx}" data-count="${n}">${heartSVG()}</span>`).join('')}
+        </td>
+        <td class="row-score">${rowScore}점</td>
+      `;
+      tbody.appendChild(tr);
+    });
+
+    tbody.querySelectorAll('.delete-btn').forEach(btn => {
+      btn.onclick = function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        const idx = parseInt(this.getAttribute('data-idx'));
+        deleteRow(idx);
+        return false;
+      };
+    });
+    tbody.querySelectorAll('.editable').forEach(el => {
+      el.addEventListener('blur', () => {
+        const idx = parseInt(el.dataset.idx);
+        const field = el.dataset.field;
+        updateField(idx, field, el.textContent);
+      });
+    });
+    tbody.querySelectorAll('.todo-check').forEach(chk => {
+      chk.addEventListener('change', () => {
+        const idx = parseInt(chk.dataset.idx);
+        toggleDone(idx, chk.checked);
+      });
+    });
+    tbody.querySelectorAll('.heart').forEach(h => {
+      h.addEventListener('click', () => {
+        const idx = parseInt(h.dataset.idx);
+        const count = parseInt(h.dataset.count);
+        setHearts(idx, count);
+      });
+    });
+
+    updateScores();
+    renderChart();
+  }
+
+  function escapeHtml(str) {
+    if (!str) return '';
+    return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  }
+
+  function getScoreForHearts(hearts) {
+    if (hearts === 0) return 0;
+    return legendConfig[hearts] ? legendConfig[hearts].score : 0;
+  }
+
+  function updateField(idx, field, value) {
+    if (!todos[idx]) return;
+    todos[idx][field] = value.trim();
+    saveData(true);
+  }
+
+  function toggleDone(idx, checked) {
+    if (!todos[idx]) return;
+    todos[idx].done = checked;
+    if (checked) playClapSound();
+    saveData(true);
+  }
+
+  function setHearts(idx, count) {
+    if (!todos[idx]) return;
+    const wasLower = todos[idx].hearts < count;
+    if (todos[idx].hearts === count) {
+      todos[idx].hearts = count - 1;
+    } else {
+      todos[idx].hearts = count;
+    }
+    render();
+    saveData(true);
+
+    if (wasLower) {
+      if (todos[idx].hearts === 1) {
+        playHeart1Sound();
+        setTimeout(() => showCheerPopup(1), 400);
+      } else if (todos[idx].hearts === 2) {
+        playHeart2Sound();
+        setTimeout(() => showCheerPopup(2), 400);
+      } else if (todos[idx].hearts === 3) {
+        setTimeout(() => showCheerPopup(3), 400);
+      }
+    }
+    checkMilestones();
+  }
+
+  function addRow() {
+    todos.push({ subject: '', task: '', done: false, hearts: 0 });
+    render();
+    saveData(true);
+    setTimeout(() => {
+      const tbody = document.getElementById('todoBody');
+      const lastRow = tbody.children[tbody.children.length - 1];
+      if (lastRow) {
+        const subjectCell = lastRow.querySelector('.editable[data-field="subject"]');
+        if (subjectCell) subjectCell.focus();
+      }
+    }, 50);
+  }
+
+  function deleteRow(idx) {
+    if (idx < 0 || idx >= todos.length) return;
+    const tbody = document.getElementById('todoBody');
+    const row = tbody.children[idx];
+    if (row) {
+      row.classList.add('removing');
+      setTimeout(() => {
+        todos.splice(idx, 1);
+        try {
+          localStorage.setItem(getTodayKey(), JSON.stringify(todos));
+        } catch(e) {}
+        render();
+      }, 300);
+    } else {
+      todos.splice(idx, 1);
+      try {
+        localStorage.setItem(getTodayKey(), JSON.stringify(todos));
+      } catch(e) {}
+      render();
+    }
+  }
+
+  function updateLegendText(level, text) {
+    legendConfig[level].text = text.trim();
+    saveSettings();
+  }
+
+  function updateLegendScore(level, value) {
+    const num = parseInt(value) || 0;
+    legendConfig[level].score = num;
+    saveSettings();
+    render();
+  }
+
+  function updateGoal(value) {
+    const num = parseInt(value) || 1000;
+    goalScore = num;
+    saveSettings();
+    updateScores();
+  }
+
+  function getTodayScore() {
+    return todos.reduce((sum, t) => sum + getScoreForHearts(t.hearts), 0);
+  }
+
+  function getTotalScore() {
+    let total = getTodayScore();
+    for (let key in localStorage) {
+      if (key.startsWith('todo_') && key !== getTodayKey() && !key.includes('settings') && !key.includes('milestones') && !key.includes('coupons')) {
+        try {
+          const data = JSON.parse(localStorage[key]);
+          if (Array.isArray(data)) {
+            total += data.reduce((sum, t) => sum + getScoreForHearts(t.hearts || 0), 0);
+          }
+        } catch(e) {}
+      }
+    }
+    return total;
+  }
+
+  function updateScores() {
+    const dayScore = getTodayScore();
+    document.getElementById('todayScore').textContent = dayScore;
+    const isToday = isViewingToday();
+    const scoreBox = document.getElementById('dayScoreBox');
+    if (scoreBox) {
+      scoreBox.innerHTML = `${isToday ? '오늘' : '선택일'} <span id="todayScore">${dayScore}</span>점`;
+    }
+    document.getElementById('totalScore').textContent = getTotalScore();
+  }
+
+  function saveData(silent) {
+    try {
+      localStorage.setItem(getTodayKey(), JSON.stringify(todos));
+      updateScores();
+      renderChart();
+    } catch(e) {}
+  }
+
+  function saveSettings() {
+    try {
+      localStorage.setItem('todo_settings', JSON.stringify({ legendConfig, goalScore }));
+    } catch(e) {}
+  }
+
+  function loadSettings() {
+    try {
+      const saved = localStorage.getItem('todo_settings');
+      if (saved) {
+        const settings = JSON.parse(saved);
+        if (settings.legendConfig) legendConfig = settings.legendConfig;
+        if (settings.goalScore) goalScore = settings.goalScore;
+      }
+      const ms = localStorage.getItem('todo_achieved_milestones');
+      if (ms) achievedMilestones = JSON.parse(ms);
+      const cp = localStorage.getItem('todo_received_coupons');
+      if (cp) receivedCoupons = JSON.parse(cp);
+    } catch(e) {}
+
+    document.getElementById('legendText1').textContent = legendConfig[1].text;
+    document.getElementById('legendText2').textContent = legendConfig[2].text;
+    document.getElementById('legendText3').textContent = legendConfig[3].text;
+    document.getElementById('score1').value = legendConfig[1].score;
+    document.getElementById('score2').value = legendConfig[2].score;
+    document.getElementById('score3').value = legendConfig[3].score;
+    document.getElementById('goalInput').value = goalScore;
+  }
+
+  function loadData() {
+    try {
+      const saved = localStorage.getItem(getTodayKey());
+      todos = saved ? JSON.parse(saved) : [];
+    } catch(e) {
+      todos = [];
+    }
+  }
+
+  function resetToday() {
+    const isToday = isViewingToday();
+    const dateLabel = isToday ? '오늘' : 
+      `${selectedDate.getMonth()+1}월 ${selectedDate.getDate()}일`;
+    
+    if (confirm(`${dateLabel} 기록을 모두 초기화할까요?\n(할 일, 체크, 하트가 모두 삭제됩니다)`)) {
+      todos = [];
+      try { localStorage.removeItem(getTodayKey()); } catch(e) {}
+
+      const targetY = selectedDate.getFullYear();
+      const targetM = selectedDate.getMonth();
+      const targetD = selectedDate.getDate();
+      receivedCoupons = receivedCoupons.filter(c => {
+        const d = new Date(c.date);
+        return !(d.getFullYear() === targetY && d.getMonth() === targetM && d.getDate() === targetD);
+      });
+      try { localStorage.setItem('todo_received_coupons', JSON.stringify(receivedCoupons)); } catch(e) {}
+
+      const currentTotal = getTotalScore();
+      achievedMilestones = achievedMilestones.filter(m => currentTotal >= m);
+      try { localStorage.setItem('todo_achieved_milestones', JSON.stringify(achievedMilestones)); } catch(e) {}
+
+      render();
+      updateScores();
+    }
+  }
+
+  function exportData() {
+    const allData = {};
+    for (let key in localStorage) {
+      if (key.startsWith('todo_') || key === 'todo_settings' || key === 'todo_achieved_milestones' || key === 'todo_received_coupons') {
+        try {
+          allData[key] = localStorage.getItem(key);
+        } catch(e) {}
+      }
+    }
+
+    const backupObject = {
+      version: '1.0',
+      exportDate: new Date().toISOString(),
+      appName: '서안이의 오늘 할 일',
+      data: allData
+    };
+
+    const jsonStr = JSON.stringify(backupObject, null, 2);
+    const blob = new Blob([jsonStr], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+
+    const today = new Date();
+    const dateStr = `${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,'0')}-${String(today.getDate()).padStart(2,'0')}`;
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `seoan-todo-backup-${dateStr}.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+
+    alert('백업 파일이 다운로드되었어요! 📥\n\n파일 앱 → iCloud Drive에 저장하면 안전해요!');
+  }
+
+  function importData(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = function(e) {
+      try {
+        const backupObject = JSON.parse(e.target.result);
+        if (!backupObject.data || typeof backupObject.data !== 'object') {
+          alert('올바른 백업 파일이 아니에요. 😢');
+          return;
+        }
+
+        if (!confirm('백업 파일에서 데이터를 복원할까요?\n\n현재 데이터는 백업 데이터와 합쳐져요.\n(같은 날짜는 백업 데이터로 덮어쓰여요)')) {
+          return;
+        }
+
+        let restoredCount = 0;
+        for (let key in backupObject.data) {
+          try {
+            localStorage.setItem(key, backupObject.data[key]);
+            restoredCount++;
+          } catch(e) {}
+        }
+
+        alert(`✅ 복원 완료!\n${restoredCount}개의 데이터를 가져왔어요.`);
+
+        loadSettings();
+        loadData();
+        render();
+      } catch(err) {
+        alert('백업 파일을 읽을 수 없어요. 😢\n파일이 손상되었을 수 있어요.');
+      }
+    };
+    reader.readAsText(file);
+    event.target.value = '';
+  }
+
+  function getRandomCoupon(milestoneScore) {
+    const monthKey = getMonthKey();
+    const usedThisMonth = receivedCoupons
+      .filter(c => {
+        const d = new Date(c.date);
+        const mKey = `${d.getFullYear()}_${String(d.getMonth()+1).padStart(2,'0')}`;
+        return mKey === monthKey;
+      })
+      .map(c => c.coupon);
+
+    const pool = milestoneScore >= 90 
+      ? [...couponList, ...premiumCouponList]
+      : couponList;
+
+    let available = pool.filter(c => !usedThisMonth.includes(c));
+    if (available.length === 0) available = pool.slice();
+    return available[Math.floor(Math.random() * available.length)];
+  }
+
+  function showCheerPopup(heartLevel) {
+    let msgList;
+    if (heartLevel === 1) msgList = cheerMessages1;
+    else if (heartLevel === 2) msgList = cheerMessages2;
+    else msgList = cheerMessages3;
+
+    const msg = msgList[Math.floor(Math.random() * msgList.length)];
+    document.getElementById('popupEmoji').textContent = msg.emoji;
+    document.getElementById('popupMessage').innerHTML = msg.text;
+    document.getElementById('popupCoupon').style.display = 'none';
+    document.getElementById('popupOverlay').classList.add('show');
+
+    if (heartLevel === 3) {
+      playCheerSound();
+      launchConfetti();
+    }
+  }
+
+  function closePopup() {
+    document.getElementById('popupOverlay').classList.remove('show');
+  }
+
+  function checkMilestones() {
+    const total = getTotalScore();
+    milestones = generateMilestones(total);
+    
+    milestones.forEach(m => {
+      if (total >= m.score && !achievedMilestones.includes(m.score)) {
+        achievedMilestones.push(m.score);
+        localStorage.setItem('todo_achieved_milestones', JSON.stringify(achievedMilestones));
+        showMilestonePopup(m);
+      }
+    });
+  }
+
+  function showMilestonePopup(milestone) {
+    setTimeout(() => {
+      const message = `${milestone.icon} ${milestone.score}점 달성!<br>대단해, 서안아!`;
+
+      const newCoupons = [];
+      for (let i = 0; i < milestone.couponCount; i++) {
+        const c = getRandomCoupon(milestone.score);
+        newCoupons.push(c);
+        receivedCoupons.push({ coupon: c, date: new Date().toISOString(), milestone: milestone.score });
+      }
+      localStorage.setItem('todo_received_coupons', JSON.stringify(receivedCoupons));
+
+      document.getElementById('popupEmoji').textContent = milestone.icon;
+      document.getElementById('popupMessage').innerHTML = message;
+
+      const couponBox = document.getElementById('popupCoupon');
+      couponBox.style.display = 'block';
+      document.getElementById('popupCouponContent').innerHTML = 
+        newCoupons.map(c => `<div style="margin:6px 0;">${c}</div>`).join('');
+
+      document.getElementById('popupOverlay').classList.add('show');
+      playMilestoneSound();
+      launchConfetti();
+    }, 800);
+  }
+
+  function showCouponsPopup() {
+    const overlay = document.getElementById('couponListOverlay');
+    const content = document.getElementById('couponListContent');
+
+    if (receivedCoupons.length === 0) {
+      content.innerHTML = `<div class="coupon-empty">
+        🎁<br><br>
+        아직 받은 쿠폰이 없어요!<br>
+        점수를 모아서 쿠폰을 받아보세요.<br><br>
+        <small style="color:#bbb;">15점, 45점, 90점, 130점, 170점...<br>(90점부터 40점마다 쿠폰 지급)</small>
+      </div>`;
+    } else {
+      const grouped = {};
+      receivedCoupons.forEach(c => {
+        const key = c.milestone || '기타';
+        if (!grouped[key]) grouped[key] = [];
+        grouped[key].push(c);
+      });
+
+      const sortedKeys = Object.keys(grouped).sort((a, b) => {
+        const aNum = parseInt(a) || 0;
+        const bNum = parseInt(b) || 0;
+        return bNum - aNum;
+      });
+
+      let html = `<div style="font-size:0.85rem; color:#666; margin-bottom:12px; text-align:center;">
+        총 <strong style="color:#e91e63;">${receivedCoupons.length}장</strong>의 쿠폰을 받았어요!
+      </div>`;
+
+      sortedKeys.forEach(key => {
+        const items = grouped[key];
+        items.sort((a, b) => new Date(b.date) - new Date(a.date));
+
+        html += `<div style="margin: 14px 0 8px; padding: 6px 10px; background: linear-gradient(135deg, #ec407a, #d81b60); color: white; border-radius: 8px; font-weight: 700; font-size: 0.9rem; text-align: center;">
+          🏆 ${key}점 달성 보상 (${items.length}장)
+        </div>`;
+
+        items.forEach(c => {
+          const date = new Date(c.date);
+          const dateStr = `${date.getFullYear()}.${String(date.getMonth()+1).padStart(2,'0')}.${String(date.getDate()).padStart(2,'0')}`;
+          html += `<div class="coupon-item">
+            <div style="flex:1;">
+              <div class="coupon-item-content">${c.coupon}</div>
+              <div class="coupon-item-meta">받은 날: ${dateStr}</div>
+            </div>
+          </div>`;
+        });
+      });
+
+      content.innerHTML = html;
+    }
+    overlay.classList.add('show');
+  }
+
+  function closeCouponList() {
+    document.getElementById('couponListOverlay').classList.remove('show');
+  }
+
+  function switchChart(type, btn) {
+    currentChartType = type;
+    chartOffset = 0;
+    document.querySelectorAll('.chart-tab').forEach(t => t.classList.remove('active'));
+    btn.classList.add('active');
+    renderChart();
+  }
+
+  function navChart(direction) {
+    chartOffset += direction;
+    if (chartOffset > 0) chartOffset = 0;
+    renderChart();
+  }
+
+  function getDayScore(year, month, day) {
+    const key = `todo_${year}_${String(month).padStart(2,'0')}_${String(day).padStart(2,'0')}`;
+    try {
+      const data = localStorage.getItem(key);
+      if (data) {
+        const arr = JSON.parse(data);
+        if (Array.isArray(arr)) {
+          return arr.reduce((sum, t) => sum + getScoreForHearts(t.hearts || 0), 0);
+        }
+      }
+    } catch(e) {}
+    return 0;
+  }
+
+  function getMondayOfWeek(date) {
+    const d = new Date(date);
+    const day = d.getDay();
+    const diff = day === 0 ? -6 : 1 - day;
+    d.setDate(d.getDate() + diff);
+    d.setHours(0,0,0,0);
+    return d;
+  }
+
+  function renderChart() {
+    const container = document.getElementById('chartBars');
+    const summary = document.getElementById('chartSummary');
+    const navLabel = document.getElementById('navLabel');
+    const navNext = document.getElementById('navNext');
+    const today = new Date();
+    today.setHours(0,0,0,0);
+    let bars = [];
+
+    if (currentChartType === 'week') {
+      const currentMonday = getMondayOfWeek(today);
+      const targetMonday = new Date(currentMonday);
+      targetMonday.setDate(targetMonday.getDate() + chartOffset * 7);
+
+      const days = ['월','화','수','목','금','토','일'];
+      const todayStr = `${today.getFullYear()}-${today.getMonth()}-${today.getDate()}`;
+
+      for (let i = 0; i < 7; i++) {
+        const d = new Date(targetMonday);
+        d.setDate(d.getDate() + i);
+        const score = getDayScore(d.getFullYear(), d.getMonth()+1, d.getDate());
+        const dStr = `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
+        bars.push({
+          label: `${d.getMonth()+1}/${d.getDate()}<br>(${days[i]})`,
+          score,
+          isToday: dStr === todayStr,
+          dateObj: new Date(d)
+        });
+      }
+
+      const endDate = new Date(targetMonday);
+      endDate.setDate(endDate.getDate() + 6);
+      navLabel.textContent = `${targetMonday.getMonth()+1}/${targetMonday.getDate()} ~ ${endDate.getMonth()+1}/${endDate.getDate()}`;
+      navNext.disabled = chartOffset >= 0;
+    } else {
+      const targetMonth = new Date(today.getFullYear(), today.getMonth() + chartOffset, 1);
+      const year = targetMonth.getFullYear();
+      const month = targetMonth.getMonth() + 1;
+      const daysInMonth = new Date(year, month, 0).getDate();
+      const todayStr = `${today.getFullYear()}-${today.getMonth()}-${today.getDate()}`;
+
+      for (let day = 1; day <= daysInMonth; day++) {
+        const d = new Date(year, month - 1, day);
+        const score = getDayScore(year, month, day);
+        const dStr = `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
+        bars.push({
+          label: `${day}`,
+          score,
+          isToday: dStr === todayStr,
+          dateObj: new Date(d)
+        });
+      }
+
+      navLabel.textContent = `${year}년 ${month}월`;
+      navNext.disabled = chartOffset >= 0;
+    }
+
+    const maxScore = Math.max(...bars.map(b => b.score), 5);
+    container.innerHTML = bars.map((b, idx) => {
+      const heightPercent = (b.score / maxScore) * 100;
+      const todayClass = b.isToday ? 'today' : '';
+      const labelClass = b.isToday ? 'today-label' : '';
+      return `
+        <div class="chart-bar-wrap" data-bar-idx="${idx}">
+          <div class="chart-bar ${b.score === 0 ? 'zero' : ''} ${todayClass}" style="height: ${b.score === 0 ? 4 : heightPercent}%;">
+            ${b.score > 0 ? `<span class="chart-bar-value">${b.score}</span>` : ''}
+          </div>
+          <div class="chart-bar-label ${labelClass}">${b.label}</div>
+        </div>
+      `;
+    }).join('');
+
+    container.querySelectorAll('.chart-bar-wrap').forEach(wrap => {
+      wrap.addEventListener('click', () => {
+        const idx = parseInt(wrap.dataset.barIdx);
+        const barData = bars[idx];
+        if (barData && barData.dateObj) {
+          selectedDate = new Date(barData.dateObj);
+          selectedDate.setHours(0,0,0,0);
+          loadData();
+          render();
+          displayDate();
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+      });
+    });
+
+    const total = bars.reduce((s, b) => s + b.score, 0);
+    const scoredDays = bars.filter(b => b.score > 0);
+    const avg = scoredDays.length > 0 ? (total / scoredDays.length).toFixed(1) : 0;
+    const max = Math.max(...bars.map(b => b.score), 0);
+    const activeDays = scoredDays.length;
+    summary.innerHTML = `
+      <div class="summary-item">
+        <div class="summary-label">총점</div>
+        <div class="summary-value">${total}점</div>
+      </div>
+      <div class="summary-item">
+        <div class="summary-label">활동일 평균</div>
+        <div class="summary-value">${avg}점</div>
+      </div>
+      <div class="summary-item">
+        <div class="summary-label">최고점</div>
+        <div class="summary-value">${max}점</div>
+      </div>
+      <div class="summary-item">
+        <div class="summary-label">활동일</div>
+        <div class="summary-value">${activeDays}일</div>
+      </div>
+    `;
+  }
+
+  function launchConfetti() {
+    const colors = ['#e91e63', '#ff9800', '#ffd54f', '#66bb6a', '#42a5f5', '#9575cd'];
+    for (let i = 0; i < 60; i++) {
+      const c = document.createElement('div');
+      c.className = 'confetti';
+      c.style.left = Math.random() * 100 + 'vw';
+      c.style.top = '-10px';
+      c.style.background = colors[Math.floor(Math.random() * colors.length)];
+      c.style.borderRadius = Math.random() > 0.5 ? '50%' : '0';
+      c.style.transform = `rotate(${Math.random()*360}deg)`;
+      document.body.appendChild(c);
+      const duration = 2000 + Math.random() * 2000;
+      const drift = (Math.random() - 0.5) * 200;
+      c.animate([
+        { transform: `translate(0, 0) rotate(0deg)`, opacity: 1 },
+        { transform: `translate(${drift}px, 100vh) rotate(${Math.random()*720}deg)`, opacity: 0 }
+      ], { duration, easing: 'cubic-bezier(0.25,0.46,0.45,0.94)' });
+      setTimeout(() => c.remove(), duration);
+    }
+  }
+
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('service-worker.js')
+        .then(reg => console.log('SW 등록 완료'))
+        .catch(err => console.log('SW 등록 실패'));
+    });
+  }
+
+  displayDate();
+  loadSettings();
+  loadData();
+  render();
+</script>
+
+</body>
+</html>
